@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, Column, Integer, String, DateTime, ForeignKey, Date
+from sqlalchemy import create_engine, Column, Integer, String, DateTime, ForeignKey, Date, LargeBinary
 from sqlalchemy.orm import declarative_base, sessionmaker
 from datetime import datetime
 from config import settings
@@ -19,6 +19,21 @@ class User(Base):
     subscription_id = Column(String, nullable=True)
     paid_since = Column(DateTime, nullable=True)
     last_login = Column(DateTime, nullable=True)
+
+class WebAuthnCredential(Base):
+    __tablename__ = "webauthn_credentials"
+    id = Column(String, primary_key=True, index=True)  # The credential ID
+    user_id = Column(Integer, ForeignKey("users.user_id"), nullable=False)
+    public_key = Column(LargeBinary, nullable=False)
+    sign_count = Column(Integer, default=0, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+class AuthChallenge(Base):
+    __tablename__ = "auth_challenges"
+    session_id = Column(String, primary_key=True, index=True)
+    challenge = Column(String, nullable=False)
+    user_id = Column(Integer, ForeignKey("users.user_id"), nullable=True) # None for login, filled for register
+    expires_at = Column(DateTime, nullable=False)
 
 class Usage(Base):
     __tablename__ = "usage"

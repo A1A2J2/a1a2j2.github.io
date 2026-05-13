@@ -215,3 +215,108 @@ async function sendMessage() {
         input.focus();
     }
 }
+
+// Passkey implementation
+const { startRegistration, startAuthentication } = window.SimpleWebAuthnBrowser || {};
+
+async function signupWithPasskey() {
+    const u = document.getElementById('signup-username').value;
+    const e = document.getElementById('signup-email').value;
+    
+    if (!u || !e) {
+        document.getElementById('signup-error').innerText = 'Username and Email are required for Passkey signup.';
+        return;
+    }
+    
+    if (!startRegistration) {
+        document.getElementById('signup-error').innerText = 'Passkey library not loaded.';
+        return;
+    }
+
+    try {
+        const resp = await fetch(`${API_BASE}/webauthn/register/options`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: u, email: e })
+        });
+        
+        const data = await resp.json();
+        if (!resp.ok) {
+            document.getElementById('signup-error').innerText = data.detail || 'Failed to get passkey options';
+            return;
+        }
+
+        const attResp = await startRegistration({ optionsJSON: data.options });
+        
+        const verifyResp = await fetch(`${API_BASE}/webauthn/register/verify`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                session_id: data.session_id,
+                credential: attResp
+            })
+        });
+
+        const verifyData = await verifyResp.json();
+        if (verifyResp.ok) {
+            localStorage.setItem('auth_token', verifyData.token);
+            localStorage.setItem('user_info', JSON.stringify({username: verifyData.username, tier: verifyData.tier}));
+            window.location.href = '/dashboard.html';
+        } else {
+            document.getElementById('signup-error').innerText = verifyData.detail || 'Passkey verification failed';
+        }
+    } catch (err) {
+        console.error(err);
+        document.getElementById('signup-error').innerText = 'Passkey error: ' + err.message;
+    }
+}
+
+async function loginWithPasskey() {
+    const u = document.getElementById('login-username').value;
+    if (!u) {
+        document.getElementById('login-error').innerText = 'Username is required for Passkey login.';
+        return;
+    }
+    
+    if (!startAuthentication) {
+        document.getElementById('login-error').innerText = 'Passkey library not loaded.';
+        return;
+    }
+
+    try {
+        const resp = await fetch(`${API_BASE}/webauthn/login/options`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: u })
+        });
+        
+        const data = await resp.json();
+        if (!resp.ok) {
+            document.getElementById('login-error').innerText = data.detail || 'Failed to get passkey options';
+            return;
+        }
+
+        const asseResp = await startAuthentication({ optionsJSON: data.options });
+        
+        const verifyResp = await fetch(`${API_BASE}/webauthn/login/verify`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                session_id: data.session_id,
+                credential: asseResp
+            })
+        });
+
+        const verifyData = await verifyResp.json();
+        if (verifyResp.ok) {
+            localStorage.setItem('auth_token', verifyData.token);
+            localStorage.setItem('user_info', JSON.stringify({username: verifyData.username, tier: verifyData.tier}));
+            window.location.href = '/dashboard.html';
+        } else {
+            document.getElementById('login-error').innerText = verifyData.detail || 'Passkey verification failed';
+        }
+    } catch (err) {
+        console.error(err);
+        document.getElementById('login-error').innerText = 'Passkey error: ' + err.message;
+    }
+}
