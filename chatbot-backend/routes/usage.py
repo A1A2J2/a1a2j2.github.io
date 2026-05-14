@@ -8,8 +8,7 @@ router = APIRouter()
 
 LIMITS = {
     "free": {"7b": 100, "14b": 5, "32b": 1},
-    "paid": {"7b": "unlimited", "14b": 25, "32b": 10},
-    "admin": {"7b": "unlimited", "14b": "unlimited", "32b": "unlimited"}
+    "paid": {"7b": "unlimited", "14b": 25, "32b": 10}
 }
 
 @router.get("/remaining")
@@ -34,17 +33,12 @@ def get_remaining_uses(current_user: dict = Depends(get_current_user), db: Sessi
             "llama2_7b_qwen2_7b": {
                 "used": usage.model_7b_uses,
                 "limit": LIMITS[tier]["7b"],
-                "remaining": LIMITS[tier]["7b"] - usage.model_7b_uses if LIMITS[tier]["7b"] != "unlimited" else None
+                "remaining": LIMITS[tier]["7b"] - usage.model_7b_uses if tier == "free" else None
             },
-            "llama2_14b": {
+            "models_14b": {
                 "used": usage.model_14b_uses,
                 "limit": LIMITS[tier]["14b"],
-                "remaining": LIMITS[tier]["14b"] - usage.model_14b_uses if LIMITS[tier]["14b"] != "unlimited" else None
-            },
-            "llama2_32b": {
-                "used": usage.model_32b_uses,
-                "limit": LIMITS[tier]["32b"],
-                "remaining": LIMITS[tier]["32b"] - usage.model_32b_uses if LIMITS[tier]["32b"] != "unlimited" else None
+                "remaining": LIMITS[tier]["14b"] - usage.model_14b_uses
             }
         },
         "month_resets_on": (usage.month_start_date + timedelta(days=30)).isoformat()

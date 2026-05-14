@@ -47,7 +47,7 @@ async function login() {
         if(res.ok) {
             localStorage.setItem('auth_token', data.token);
             localStorage.setItem('user_info', JSON.stringify({username: data.username, tier: data.tier}));
-            window.location.href = 'dashboard.html';
+            window.location.href = '/dashboard.html';
         } else {
             document.getElementById('login-error').innerText = data.detail || 'Login failed';
         }
@@ -120,10 +120,8 @@ async function fetchUsage() {
             document.getElementById('user-tier').innerText = data.tier;
             const u7 = data.usage.llama2_7b_qwen2_7b;
             document.getElementById('usage-7b').innerText = `${u7.used} / ${u7.limit === null ? 'Unlimited' : u7.limit} used`;
-            const u14 = data.usage.llama2_14b;
+            const u14 = data.usage.models_14b;
             document.getElementById('usage-14b').innerText = `${u14.used} / ${u14.limit} used`;
-            const u32 = data.usage.llama2_32b;
-            document.getElementById('usage-32b').innerText = `${u32.used} / ${u32.limit} used`;
         }
     } catch(e) {
         console.error(e);
@@ -172,41 +170,14 @@ async function loadConversations() {
                 btn.onclick = () => loadHistory(c.conversation_id);
                 btn.style.flex = '1';
 
-                const menuBtn = document.createElement('button');
-                menuBtn.innerText = '...';
-                menuBtn.className = 'dropbtn';
-                menuBtn.style.padding = '0 10px';
-                menuBtn.style.background = '#888';
-                menuBtn.style.color = '#fff';
-                menuBtn.style.border = 'none';
-                menuBtn.style.borderRadius = '8px';
-                menuBtn.style.cursor = 'pointer';
-                
-                const dropdownDiv = document.createElement('div');
-                dropdownDiv.className = 'dropdown-content';
-                dropdownDiv.id = `dropdown-${c.conversation_id}`;
-                
-                const renameBtn = document.createElement('button');
-                renameBtn.innerText = 'Rename';
-                renameBtn.onclick = async () => {
-                    const newTitle = prompt('Enter new title:', c.title);
-                    if(newTitle && newTitle !== c.title) {
-                        await fetch(`${API_BASE}/chat/conversation/${c.conversation_id}`, {
-                            method: 'PUT',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'Authorization': `Bearer ${getToken()}`,
-                                'ngrok-skip-browser-warning': 'true'
-                            },
-                            body: JSON.stringify({title: newTitle})
-                        });
-                        loadConversations();
-                    }
-                };
-                
                 const delBtn = document.createElement('button');
-                delBtn.innerText = 'Delete';
-                delBtn.style.color = 'red';
+                delBtn.innerText = '✕';
+                delBtn.style.padding = '0 10px';
+                delBtn.style.background = '#ff3b30';
+                delBtn.style.color = '#fff';
+                delBtn.style.border = 'none';
+                delBtn.style.borderRadius = '8px';
+                delBtn.style.cursor = 'pointer';
                 delBtn.onclick = async () => {
                     if(confirm('Delete this chat?')) {
                         await fetch(`${API_BASE}/chat/conversation/${c.conversation_id}`, {
@@ -221,21 +192,8 @@ async function loadConversations() {
                     }
                 };
 
-                dropdownDiv.appendChild(renameBtn);
-                dropdownDiv.appendChild(delBtn);
-
-                const dropdownWrap = document.createElement('div');
-                dropdownWrap.className = 'dropdown';
-                dropdownWrap.appendChild(menuBtn);
-                dropdownWrap.appendChild(dropdownDiv);
-                
-                menuBtn.onclick = (e) => {
-                    e.stopPropagation();
-                    document.getElementById(`dropdown-${c.conversation_id}`).classList.toggle("show");
-                };
-
                 wrap.appendChild(btn);
-                wrap.appendChild(dropdownWrap);
+                wrap.appendChild(delBtn);
                 list.appendChild(wrap);
             });
             
@@ -250,79 +208,6 @@ async function loadConversations() {
         }
     } catch(e) {
         console.error(e);
-    }
-}
-
-async function loadMemories() {
-    try {
-        const res = await fetch(`${API_BASE}/memory/`, {
-            headers: { 'Authorization': `Bearer ${getToken()}`, 'ngrok-skip-browser-warning': 'true' }
-        });
-        if(res.ok) {
-            const data = await res.json();
-            const list = document.getElementById('memories-list');
-            if(!list) return;
-            list.innerHTML = '';
-            if (data.memories.length === 0) {
-                list.innerText = 'No memories saved yet.';
-                return;
-            }
-            data.memories.forEach(m => {
-                const div = document.createElement('div');
-                div.className = 'memory-item';
-                
-                const span = document.createElement('span');
-                span.innerText = m.content;
-                
-                const actions = document.createElement('div');
-                actions.className = 'memory-actions';
-                
-                const editBtn = document.createElement('button');
-                editBtn.className = 'memory-edit';
-                editBtn.innerText = 'Edit';
-                editBtn.onclick = () => editMemory(m.memory_id, m.content);
-                
-                const delBtn = document.createElement('button');
-                delBtn.className = 'memory-del';
-                delBtn.innerText = 'Delete';
-                delBtn.onclick = () => deleteMemory(m.memory_id);
-                
-                actions.appendChild(editBtn);
-                actions.appendChild(delBtn);
-                
-                div.appendChild(span);
-                div.appendChild(actions);
-                list.appendChild(div);
-            });
-        }
-    } catch(e) {
-        console.error(e);
-    }
-}
-
-async function editMemory(id, oldContent) {
-    const newContent = prompt('Edit memory:', oldContent);
-    if (newContent && newContent !== oldContent) {
-        await fetch(`${API_BASE}/memory/${id}`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${getToken()}`,
-                'ngrok-skip-browser-warning': 'true'
-            },
-            body: JSON.stringify({content: newContent})
-        });
-        loadMemories();
-    }
-}
-
-async function deleteMemory(id) {
-    if (confirm('Delete this memory?')) {
-        await fetch(`${API_BASE}/memory/${id}`, {
-            method: 'DELETE',
-            headers: { 'Authorization': `Bearer ${getToken()}`, 'ngrok-skip-browser-warning': 'true' }
-        });
-        loadMemories();
     }
 }
 
@@ -367,36 +252,20 @@ async function loadHistory(conversationId = null) {
     }
 }
 
-let currentAbortController = null;
-
 async function sendMessage() {
     const input = document.getElementById('chat-input');
     const text = input.value.trim();
     if(!text) return;
     const model = document.getElementById('model-select').value;
-    const webSearch = document.getElementById('web-search-toggle') ? document.getElementById('web-search-toggle').checked : false;
-    
-    let systemPrompt = null;
-    const systemPromptEl = document.getElementById('system-prompt');
-    if (systemPromptEl && systemPromptEl.style.display !== 'none' && systemPromptEl.value.trim() !== '') {
-        systemPrompt = systemPromptEl.value.trim();
-    }
     
     appendMessage(text, 'user');
     input.value = '';
     const btn = document.getElementById('send-btn');
     btn.disabled = true;
-    
-    const stopBtn = document.getElementById('stop-btn');
-    if (stopBtn) stopBtn.style.display = 'inline-block';
-    
     document.getElementById('chat-error').innerText = 'AI is thinking...';
     
-    currentAbortController = new AbortController();
-    
     try {
-        const body = {message: text, model_id: model, web_search: webSearch};
-        if (systemPrompt) body.system_prompt = systemPrompt;
+        const body = {message: text, model_id: model};
         if (currentConversationId) {
             body.conversation_id = currentConversationId;
         }
@@ -408,8 +277,7 @@ async function sendMessage() {
                 'Authorization': `Bearer ${getToken()}`,
                 'ngrok-skip-browser-warning': 'true'
             },
-            body: JSON.stringify(body),
-            signal: currentAbortController.signal
+            body: JSON.stringify(body)
         });
         const data = await res.json();
         if(res.ok) {
@@ -425,22 +293,10 @@ async function sendMessage() {
             document.getElementById('chat-error').innerText = data.detail || 'Error';
         }
     } catch(e) {
-        if (e.name === 'AbortError') {
-            document.getElementById('chat-error').innerText = 'AI generation stopped.';
-        } else {
-            document.getElementById('chat-error').innerText = 'Network error';
-        }
+        document.getElementById('chat-error').innerText = 'Network error';
     } finally {
         btn.disabled = false;
-        if (stopBtn) stopBtn.style.display = 'none';
-        currentAbortController = null;
         input.focus();
-    }
-}
-
-function stopAI() {
-    if (currentAbortController) {
-        currentAbortController.abort();
     }
 }
 
@@ -495,7 +351,7 @@ async function signupWithPasskey() {
         if (verifyResp.ok) {
             localStorage.setItem('auth_token', verifyData.token);
             localStorage.setItem('user_info', JSON.stringify({username: verifyData.username, tier: verifyData.tier}));
-            window.location.href = 'dashboard.html';
+            window.location.href = '/dashboard.html';
         } else {
             document.getElementById('signup-error').innerText = verifyData.detail || 'Passkey verification failed';
         }
@@ -551,7 +407,7 @@ async function loginWithPasskey() {
         if (verifyResp.ok) {
             localStorage.setItem('auth_token', verifyData.token);
             localStorage.setItem('user_info', JSON.stringify({username: verifyData.username, tier: verifyData.tier}));
-            window.location.href = 'dashboard.html';
+            window.location.href = '/dashboard.html';
         } else {
             document.getElementById('login-error').innerText = verifyData.detail || 'Passkey verification failed';
         }

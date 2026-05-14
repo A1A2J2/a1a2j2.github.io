@@ -15,10 +15,11 @@ MODEL_GROUPS = {
     "llama2_7b": "7b",
     "qwen2_7b": "7b",
     "phi": "7b",
-    "llama2_14b": "14b",
-    "llama2_32b": "32b",
+    "llama2_13b": "14b",
+    "llama4_scour_8b": "7b",
+    "qwen_coder_3.5_14b": "14b",
     "llama3_7b": "7b",
-    "llama3_14b": "14b"
+    "llama3": "7b"
 }
 
 LIMITS = {
@@ -79,7 +80,17 @@ async def send_message(request: ChatRequest, background_tasks: BackgroundTasks, 
         raise HTTPException(status_code=429, detail="Monthly limit reached for this model tier")
 
     # Calling Ollama
-    ollama_model = request.model_id.replace("_", ":")
+    OLLAMA_MODEL_MAPPING = {
+        "llama2_7b": "llama2:7b",
+        "qwen2_7b": "qwen2:7b",
+        "phi": "phi",
+        "llama2_13b": "llama2:13b",
+        "llama4_scour_8b": "llama4_scour:8b",
+        "qwen_coder_3.5_14b": "qwen_coder_3.5:14b",
+        "llama3_7b": "llama3",  # Automatically fixes Llama 3 7B mismatch
+        "llama3": "llama3"
+    }
+    ollama_model = OLLAMA_MODEL_MAPPING.get(request.model_id, request.model_id.replace("_", ":"))
     
     # Enhance message with internet context if needed or if web_search flag is True
     msg_to_enhance = request.message
@@ -166,8 +177,7 @@ async def send_message(request: ChatRequest, background_tasks: BackgroundTasks, 
         "timestamp": msg.timestamp.isoformat(),
         "uses_remaining": {
             "llama2_7b_qwen2_7b": max(0, LIMITS[tier]["7b"] - usage.model_7b_uses) if LIMITS[tier]["7b"] != float('inf') else "unlimited",
-            "llama2_14b": max(0, LIMITS[tier]["14b"] - usage.model_14b_uses) if LIMITS[tier]["14b"] != float('inf') else "unlimited",
-            "llama2_32b": max(0, LIMITS[tier]["32b"] - usage.model_32b_uses) if LIMITS[tier]["32b"] != float('inf') else "unlimited"
+            "models_14b": max(0, LIMITS[tier]["14b"] - usage.model_14b_uses) if LIMITS[tier]["14b"] != float('inf') else "unlimited"
         }
     }
 
