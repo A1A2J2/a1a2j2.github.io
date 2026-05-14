@@ -5,20 +5,9 @@
     <title>LLM Chatbot - Login</title>
     <link rel="stylesheet" href="styles.css">
     <script src="https://unpkg.com/@simplewebauthn/browser/dist/bundle/index.umd.min.js"></script>
-    <style>
-        .server-config { background: #fff3cd; padding: 10px; border-radius: 8px; margin-bottom: 20px; font-size: 14px; text-align: center; border: 1px solid #ffeeba; }
-        .server-config input { margin-top: 5px; width: 80%; padding: 5px; }
-    </style>
 </head>
 <body>
     <div class="container">
-        <div class="server-config" id="server-config-card">
-            <p><strong>Backend Connection:</strong> Enter the backend server URL (e.g., Ngrok URL) below if you are connecting remotely. Leave as default if running locally.</p>
-            <input type="text" id="backend-url" placeholder="http://localhost:8000" value="http://localhost:8000">
-            <button onclick="saveBackendUrl()" style="padding: 5px 10px; margin-top: 10px; width: auto;">Save URL</button>
-            <p id="url-saved-msg" style="color: green; display: none; margin-top: 5px;">URL Saved!</p>
-        </div>
-
         <div class="card" id="login-card">
             <h2>Login</h2>
             <input type="text" id="login-username" placeholder="Username">
@@ -42,19 +31,6 @@
     </div>
     <script src="app.js"></script>
     <script>
-        // Load saved URL on startup
-        const savedUrl = localStorage.getItem('backend_url');
-        if (savedUrl) {
-            document.getElementById('backend-url').value = savedUrl;
-        } else {
-            // Default based on current origin if not set
-            const defaultUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-                ? 'http://localhost:8000' 
-                : window.location.origin;
-            document.getElementById('backend-url').value = defaultUrl;
-            localStorage.setItem('backend_url', defaultUrl);
-        }
-
         if (localStorage.getItem('auth_token')) {
             window.location.href = 'dashboard.html';
         }
@@ -66,17 +42,6 @@
                 document.getElementById('signup-card').style.display = 'none';
                 document.getElementById('login-card').style.display = 'block';
             }
-        }
-        
-        function saveBackendUrl() {
-            const url = document.getElementById('backend-url').value.trim();
-            localStorage.setItem('backend_url', url.replace(/\/$/, "")); // remove trailing slash
-            const msg = document.getElementById('url-saved-msg');
-            msg.style.display = 'block';
-            setTimeout(() => {
-                msg.style.display = 'none';
-                window.location.reload();
-            }, 1000);
         }
     </script>
 </body>
