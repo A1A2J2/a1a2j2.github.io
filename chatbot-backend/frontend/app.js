@@ -4,7 +4,8 @@ function getApiBase() {
     if (savedUrl) {
         return `${savedUrl}/api`;
     }
-    return '/api';
+    // Use your actual Ngrok URL
+    return 'https://illusion-winter-radar.ngrok-free.dev/api';
 }
 
 const API_BASE = getApiBase();
