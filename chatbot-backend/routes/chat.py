@@ -22,9 +22,9 @@ MODEL_GROUPS = {
 }
 
 LIMITS = {
-    "free": {"7b": 100, "8b": 100, "13b": 5, "32b": 1},
-    "paid": {"7b": float('inf'), "8b": float('inf'), "13b": 25, "32b": 10},
-    "admin": {"7b": float('inf'), "8b": float('inf'), "13b": float('inf'), "32b": float('inf')}
+    "free": {"7b": 100, "8b": 100, "13b": 5},
+    "paid": {"7b": float('inf'), "8b": float('inf'), "13b": 25},
+    "admin": {"7b": float('inf'), "8b": float('inf'), "13b": float('inf')}
 }
 
 async def extract_memory(user_id: int, message: str, db: Session):
@@ -70,7 +70,6 @@ async def send_message(request: ChatRequest, background_tasks: BackgroundTasks, 
         usage.model_7b_uses = 0
         usage.model_8b_uses = 0
         usage.model_13b_uses = 0
-        usage.model_32b_uses = 0
         db.commit()
     
     current_uses = getattr(usage, f"model_{group}_uses")
@@ -168,8 +167,7 @@ async def send_message(request: ChatRequest, background_tasks: BackgroundTasks, 
         "uses_remaining": {
             "llama2_7b_qwen2_7b": max(0, LIMITS[tier]["7b"] - usage.model_7b_uses) if LIMITS[tier]["7b"] != float('inf') else "unlimited",
             "llama3_8b": max(0, LIMITS[tier]["8b"] - usage.model_8b_uses) if LIMITS[tier]["8b"] != float('inf') else "unlimited",
-            "llama2_13b": max(0, LIMITS[tier]["13b"] - usage.model_13b_uses) if LIMITS[tier]["13b"] != float('inf') else "unlimited",
-            "llama2_32b": max(0, LIMITS[tier]["32b"] - usage.model_32b_uses) if LIMITS[tier]["32b"] != float('inf') else "unlimited"
+            "llama2_13b": max(0, LIMITS[tier]["13b"] - usage.model_13b_uses) if LIMITS[tier]["13b"] != float('inf') else "unlimited"
         }
     }
 

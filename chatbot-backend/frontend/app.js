@@ -120,10 +120,10 @@ async function fetchUsage() {
             document.getElementById('user-tier').innerText = data.tier;
             const u7 = data.usage.llama2_7b_qwen2_7b;
             document.getElementById('usage-7b').innerText = `${u7.used} / ${u7.limit === null ? 'Unlimited' : u7.limit} used`;
-            const u14 = data.usage.llama2_14b;
-            document.getElementById('usage-14b').innerText = `${u14.used} / ${u14.limit} used`;
-            const u32 = data.usage.llama2_32b;
-            document.getElementById('usage-32b').innerText = `${u32.used} / ${u32.limit} used`;
+            const u8 = data.usage.llama3_8b;
+            document.getElementById('usage-8b').innerText = `${u8.used} / ${u8.limit === null ? 'Unlimited' : u8.limit} used`;
+            const u13 = data.usage.llama2_13b;
+            document.getElementById('usage-13b').innerText = `${u13.used} / ${u13.limit} used`;
         }
     } catch(e) {
         console.error(e);
